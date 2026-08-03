@@ -12,7 +12,6 @@ os.makedirs(SILVER_DIR, exist_ok=True)
 
 
 def parse_time_to_ms(time_str: str | None) -> float | None:
-    """Convert raw qualifying time string (e.g., '1:21.424') to milliseconds."""
     if not time_str or time_str == r"\N":
         return None
     try:
@@ -41,7 +40,7 @@ def process_results() -> pd.DataFrame:
             )
             for race in races:
                 season = int(race.get("season", 0))
-                if season < 2014:  # 2014 Cutoff Enforcement
+                if season < 2014:
                     continue
 
                 round_no = int(race.get("round", 0))
@@ -67,6 +66,10 @@ def process_results() -> pd.DataFrame:
 
     df = pd.DataFrame(results_list)
     df.replace(to_replace=r"\N", value=np.nan, inplace=True)
+    
+    # Deduplicate across combined Driver/Constructor JSON caches
+    df = df.drop_duplicates(subset=["raceId", "driverId"]).reset_index(drop=True)
+    
     df["grid"] = pd.to_numeric(df["grid"], errors="coerce")
     df["positionOrder"] = pd.to_numeric(df["positionOrder"], errors="coerce")
     df["points"] = pd.to_numeric(df["points"], errors="coerce")
