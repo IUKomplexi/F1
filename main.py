@@ -14,7 +14,6 @@ HEADERS = {
 }
 THROTTLE_DELAY = 0.5
 
-# Check if dir exists
 os.makedirs(BRONZE_DIR, exist_ok=True)
 
 
