@@ -5,7 +5,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-# --- Configuration ---
+# --- Config ---
 BASE_URL = "https://api.jolpi.ca/ergast/f1/"
 BRONZE_DIR = "./data/bronze"
 HEADERS = {
@@ -26,11 +26,26 @@ def fetch_paginated_endpoint(endpoint_path: str, filename_prefix: str):
     endpoint_path = endpoint_path.lstrip("/")
 
     while total is None or offset < total:
-        time.sleep(THROTTLE_DELAY)  # Rate Limits
         
-        # Create URL query 
+        # Checkpoint
+        safe_filename = f"{filename_prefix}_offset_{offset}.json".replace("/", "_")
+        filepath = os.path.join(BRONZE_DIR, safe_filename)
+
+        if os.path.exists(filepath):
+            print(f"    [Checkpoint] File exists: {filepath}. Skipping API call.")
+            with open(filepath, "r", encoding="utf-8") as f:
+                cached_data = json.load(f)
+            
+            mr_data = cached_data.get("MRData", {})
+            total = int(mr_data.get("total", 0))
+            offset += limit
+            continue # Skip rest jump to offset
+        
+        time.sleep(THROTTLE_DELAY)  # Rate Limits
+
+        # Create URL query
         params = urllib.parse.urlencode({"limit": limit, "offset": offset})
-        url = f"{BASE_URL}{endpoint_path}?{params}"
+        url = f"{BASE_URL}{endpoint_path}.json?{params}"
 
         req = urllib.request.Request(url, headers=HEADERS)
 
@@ -52,18 +67,21 @@ def fetch_paginated_endpoint(endpoint_path: str, filename_prefix: str):
                     return
                 if e.code in [429, 500, 502, 503, 504] and attempt < retries - 1:
                     retry_after = e.headers.get("Retry-After")
-                    wait_for = int(retry_after) if retry_after and retry_after.isdigit() else backoff
+                    wait_for = (
+                        int(retry_after)
+                        if retry_after and retry_after.isdigit()
+                        else backoff
+                    )
                     print(
-                        f"[Warning] HTTP {e.code} on attempt {attempt+1}. Retrying in {wait_for}s..."
+                        f"[Warning] HTTP {e.code} on attempt {attempt + 1}. Retrying in {wait_for}s..."
                     )
                     time.sleep(wait_for)
                     backoff = max(backoff * 2, wait_for * 2)
                 else:
                     print(f"    [Error] HTTP Failure: {e.code} - {e.reason}")
                     return
-            except urllib.error.URLError as e: # Catch the specific network error
+            except urllib.error.URLError as e:  # Catch the specific network error
                 print(f"Network error occurred: {e}")
-    
 
         if not response_data:
             break
@@ -72,9 +90,7 @@ def fetch_paginated_endpoint(endpoint_path: str, filename_prefix: str):
         total = int(mr_data.get("total", 0))
 
         # Save JSON payload to disk
-        safe_filename = f"{filename_prefix}_offset_{offset}.json".replace(
-            "/", "_"
-        )
+        safe_filename = f"{filename_prefix}_offset_{offset}.json".replace("/", "_")
         filepath = os.path.join(BRONZE_DIR, safe_filename)
 
         with open(filepath, "w", encoding="utf-8") as f:
@@ -89,17 +105,14 @@ def fetch_paginated_endpoint(endpoint_path: str, filename_prefix: str):
 
 
 def get_active_entities(year: int = 2026):
-    """ Get active grid, parse Grid """
+    """Get active grid, parse Grid"""
     print(f"\n---Active Grid for {year} ---")
 
     fetch_paginated_endpoint(f"/{year}/drivers", f"active_drivers_{year}")
-    fetch_paginated_endpoint(
-        f"/{year}/constructors", f"active_constructors_{year}"
-    )
+    fetch_paginated_endpoint(f"/{year}/constructors", f"active_constructors_{year}")
 
     active_drivers: set[str] = set()
     active_constructors: set[str] = set()
-
 
     # Parse through cache
     for file in os.listdir(BRONZE_DIR):
@@ -128,7 +141,7 @@ def main():
     )
 
     print("\n--- Extracting Historical Driver Records ---")
-    driver_endpoints = ["/results", "/qualifying"]
+    driver_endpoints = ["/results", "/qualifying", "/sprint"]
     for driver in driver_ids:
         print(f" Processing Profile: {driver}")
         for endpoint in driver_endpoints:
@@ -137,10 +150,7 @@ def main():
             fetch_paginated_endpoint(path, prefix)
 
     print("\n--- Extracting Historical Constructor Records ---")
-    constructor_endpoints = [
-        "/results",
-        "/qualifying",
-    ]
+    constructor_endpoints = ["/results", "/qualifying", "/sprint"]
     for constructor in constructor_ids:
         print(f" Processing Profile: {constructor}")
         for endpoint in constructor_endpoints:
@@ -150,8 +160,6 @@ def main():
 
     print("\n=== COMPLETE:Cache Is Ready ===")
 
-# --- Phase 2 ---
-# --- Phase 3 ---
-# --- Phase 4 ---
+
 if __name__ == "__main__":
     main()
