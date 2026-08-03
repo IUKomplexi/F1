@@ -85,12 +85,9 @@ def generate_gold_features() -> pd.DataFrame:
         (df["driver_best_q_ms"] - pole_times) / pole_times
     ) * 100
 
-    max_pace = df.groupby("raceId")["pace_delta_pct"].transform("max") + 0.5
-    df["pace_delta_pct"] = df["pace_delta_pct"].fillna(max_pace).fillna(2.0)
-
     # 5. Teammate Relativization Metrics
     df_teammate_info = df[
-        ["raceId", "constructorId", "driverId", "driver_best_q_ms", "positionOrder"]
+        ["raceId", "constructorId", "driverId", "driver_best_q_ms", "pace_delta_pct", "positionOrder"]
     ].copy()
     
     df_merged_tm = pd.merge(
@@ -104,22 +101,44 @@ def generate_gold_features() -> pd.DataFrame:
         df_merged_tm["driverId"] != df_merged_tm["driverId_tm"]
     ].copy()
 
-    q_deltas = (
-        df_tm_only.groupby(["raceId", "driverId"])["driver_best_q_ms_tm"]
+    # Consolidate teammate data extraction
+    tm_data = (
+        df_tm_only.groupby(["raceId", "driverId"])
+        [["driver_best_q_ms_tm", "pace_delta_pct_tm", "positionOrder_tm"]]
         .first()
         .reset_index()
     )
-    df = pd.merge(df, q_deltas, on=["raceId", "driverId"], how="left")
-    df["teammate_delta_ms"] = df["driver_best_q_ms"] - df["driver_best_q_ms_tm"]
-    df["teammate_delta_ms"] = df["teammate_delta_ms"].fillna(0.0)
+    df = pd.merge(df, tm_data, on=["raceId", "driverId"], how="left")
 
-    tm_pos = (
-        df_tm_only.groupby(["raceId", "driverId"])["positionOrder_tm"]
-        .first()
-        .reset_index()
+    # FIX: Smart Pace Imputation (Teammate + 1% penalty, else Race Max + 1%)
+    race_max_pace = df.groupby("raceId")["pace_delta_pct"].transform("max")
+    df["pace_delta_pct"] = (
+        df["pace_delta_pct"]
+        .fillna(df["pace_delta_pct_tm"] + 1.0)
+        .fillna(race_max_pace + 1.0)
+        .fillna(5.0)  # Absolute fallback for extreme edge cases
     )
-    df = pd.merge(df, tm_pos, on=["raceId", "driverId"], how="left")
-    df["h2h_win"] = (df["positionOrder"] < df["positionOrder_tm"]).astype(float)
+
+    # FIX: Teammate Delta (Penalize missing times instead of returning 0.0)
+    df["teammate_delta_ms"] = df["driver_best_q_ms"] - df["driver_best_q_ms_tm"]
+    
+    # If driver has no time but teammate does -> +1000ms penalty
+    # If teammate has no time but driver does -> -1000ms reward
+    # If both are missing -> 0.0 draw
+    df["teammate_delta_ms"] = np.where(
+        df["driver_best_q_ms"].isna() & df["driver_best_q_ms_tm"].notna(), 1000.0,
+        np.where(
+            df["driver_best_q_ms"].notna() & df["driver_best_q_ms_tm"].isna(), -1000.0,
+            df["teammate_delta_ms"].fillna(0.0)
+        )
+    )
+
+    # FIX: H2H Logic (Double DNF prevention - assume >15 is a DNF proxy draw)
+    df["h2h_win"] = np.where(
+        (df["positionOrder"] > 15) & (df["positionOrder_tm"] > 15), 
+        0.5, 
+        (df["positionOrder"] < df["positionOrder_tm"]).astype(float)
+    )
 
     df["teammate_h2h_form"] = (
         df.groupby("driverId")["h2h_win"]
@@ -180,10 +199,14 @@ def generate_gold_features() -> pd.DataFrame:
     )
 
     # 8. EWMA Form Calculation (alpha=0.4, shifted by 1)
+    
+    # FIX: Calculate historical median for rookie cold-starts instead of hardcoding
+    historical_median_pos = df["positionOrder"].median()
+
     df["driver_form_ewma"] = (
         df.groupby("driverId")["positionOrder"]
         .transform(lambda x: x.shift(1).ewm(alpha=0.4, min_periods=1).mean())
-        .fillna(12.0)
+        .fillna(historical_median_pos)
     )
 
     df_team_pts_per_race = (
