@@ -6,13 +6,13 @@ import urllib.parse
 import urllib.request
 
 # --- Configuration ---
-BASE_URL = "https://api.jolpica.net/f1"
+BASE_URL = "https://api.jolpi.ca/ergast/f1/"
 BRONZE_DIR = "./data/bronze"
 HEADERS = {
     "User-Agent": "F1_DATA&ANALYTICS_UNI/1.0",
     "Accept": "application/json",
 }
-THROTTLE_DELAY = 0.25
+THROTTLE_DELAY = 0.5
 
 # Check if dir exists
 os.makedirs(BRONZE_DIR, exist_ok=True)
@@ -23,6 +23,7 @@ def fetch_paginated_endpoint(endpoint_path: str, filename_prefix: str):
     limit = 100
     offset = 0
     total = None
+    endpoint_path = endpoint_path.lstrip("/")
 
     while total is None or offset < total:
         time.sleep(THROTTLE_DELAY)  # Rate Limits
@@ -34,7 +35,7 @@ def fetch_paginated_endpoint(endpoint_path: str, filename_prefix: str):
         req = urllib.request.Request(url, headers=HEADERS)
 
         # Retry loop for HTTP errors
-        retries = 3
+        retries = 5
         backoff = 2
         response_data = None
 
@@ -44,18 +45,25 @@ def fetch_paginated_endpoint(endpoint_path: str, filename_prefix: str):
                     response_data = json.loads(response.read().decode("utf-8"))
                     break
             except urllib.error.HTTPError as e:
-                if e.code in [429, 500, 502, 503, 504] and attempt < retries - 1:
+                if e.code == 400:
                     print(
-                        f"[Warning] HTTP {e.code} on attempt {attempt+1}. Retrying in {backoff}s..."
+                        f"    [Warning] Invalid request for endpoint '{endpoint_path}', skipping."
                     )
-                    time.sleep(backoff)
-                    backoff *= 2
+                    return
+                if e.code in [429, 500, 502, 503, 504] and attempt < retries - 1:
+                    retry_after = e.headers.get("Retry-After")
+                    wait_for = int(retry_after) if retry_after and retry_after.isdigit() else backoff
+                    print(
+                        f"[Warning] HTTP {e.code} on attempt {attempt+1}. Retrying in {wait_for}s..."
+                    )
+                    time.sleep(wait_for)
+                    backoff = max(backoff * 2, wait_for * 2)
                 else:
                     print(f"    [Error] HTTP Failure: {e.code} - {e.reason}")
                     return
-            except Exception as e:
-                print(f"    [Error] Unexpected failure fetching {url}: {e}")
-                return
+            except urllib.error.URLError as e: # Catch the specific network error
+                print(f"Network error occurred: {e}")
+    
 
         if not response_data:
             break
@@ -89,8 +97,9 @@ def get_active_entities(year: int = 2026):
         f"/{year}/constructors", f"active_constructors_{year}"
     )
 
-    active_drivers = set()
-    active_constructors = set()
+    active_drivers: set[str] = set()
+    active_constructors: set[str] = set()
+
 
     # Parse through cache
     for file in os.listdir(BRONZE_DIR):
@@ -119,7 +128,7 @@ def main():
     )
 
     print("\n--- Extracting Historical Driver Records ---")
-    driver_endpoints = ["/results", "/qualifying", "/driverStandings"]
+    driver_endpoints = ["/results", "/qualifying"]
     for driver in driver_ids:
         print(f" Processing Profile: {driver}")
         for endpoint in driver_endpoints:
@@ -131,7 +140,6 @@ def main():
     constructor_endpoints = [
         "/results",
         "/qualifying",
-        "/constructorStandings",
     ]
     for constructor in constructor_ids:
         print(f" Processing Profile: {constructor}")
