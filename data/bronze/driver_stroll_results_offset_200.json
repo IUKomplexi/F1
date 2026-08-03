@@ -1,0 +1,125 @@
+{
+    "MRData": {
+        "xmlns": "",
+        "series": "f1",
+        "url": "https://api.jolpi.ca/ergast/f1/drivers/stroll/results/",
+        "limit": "100",
+        "offset": "200",
+        "total": "202",
+        "RaceTable": {
+            "driverId": "stroll",
+            "Races": [
+                {
+                    "season": "2026",
+                    "round": "10",
+                    "url": "https://en.wikipedia.org/wiki/2026_Belgian_Grand_Prix",
+                    "raceName": "Belgian Grand Prix",
+                    "Circuit": {
+                        "circuitId": "spa",
+                        "url": "https://en.wikipedia.org/wiki/Circuit_de_Spa-Francorchamps",
+                        "circuitName": "Circuit de Spa-Francorchamps",
+                        "Location": {
+                            "lat": "50.4372",
+                            "long": "5.97139",
+                            "locality": "Spa",
+                            "country": "Belgium"
+                        }
+                    },
+                    "date": "2026-07-19",
+                    "time": "13:00:00Z",
+                    "Results": [
+                        {
+                            "number": "18",
+                            "position": "20",
+                            "positionText": "R",
+                            "points": "0",
+                            "Driver": {
+                                "driverId": "stroll",
+                                "permanentNumber": "18",
+                                "code": "STR",
+                                "url": "http://en.wikipedia.org/wiki/Lance_Stroll",
+                                "givenName": "Lance",
+                                "familyName": "Stroll",
+                                "dateOfBirth": "1998-10-29",
+                                "nationality": "Canadian"
+                            },
+                            "Constructor": {
+                                "constructorId": "aston_martin",
+                                "url": "https://en.wikipedia.org/wiki/Aston_Martin_in_Formula_One",
+                                "name": "Aston Martin",
+                                "nationality": "British"
+                            },
+                            "grid": "20",
+                            "laps": "25",
+                            "status": "Retired",
+                            "FastestLap": {
+                                "rank": "21",
+                                "lap": "21",
+                                "Time": {
+                                    "time": "1:53.980"
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "season": "2026",
+                    "round": "11",
+                    "url": "https://en.wikipedia.org/wiki/2026_Hungarian_Grand_Prix",
+                    "raceName": "Hungarian Grand Prix",
+                    "Circuit": {
+                        "circuitId": "hungaroring",
+                        "url": "https://en.wikipedia.org/wiki/Hungaroring",
+                        "circuitName": "Hungaroring",
+                        "Location": {
+                            "lat": "47.5789",
+                            "long": "19.2486",
+                            "locality": "Budapest",
+                            "country": "Hungary"
+                        }
+                    },
+                    "date": "2026-07-26",
+                    "time": "13:00:00Z",
+                    "Results": [
+                        {
+                            "number": "18",
+                            "position": "13",
+                            "positionText": "13",
+                            "points": "0",
+                            "Driver": {
+                                "driverId": "stroll",
+                                "permanentNumber": "18",
+                                "code": "STR",
+                                "url": "http://en.wikipedia.org/wiki/Lance_Stroll",
+                                "givenName": "Lance",
+                                "familyName": "Stroll",
+                                "dateOfBirth": "1998-10-29",
+                                "nationality": "Canadian"
+                            },
+                            "Constructor": {
+                                "constructorId": "aston_martin",
+                                "url": "https://en.wikipedia.org/wiki/Aston_Martin_in_Formula_One",
+                                "name": "Aston Martin",
+                                "nationality": "British"
+                            },
+                            "grid": "20",
+                            "laps": "69",
+                            "status": "Lapped",
+                            "Time": {
+                                "millis": "6060008",
+                                "time": "+1:03.828"
+                            },
+                            "FastestLap": {
+                                "rank": "14",
+                                "lap": "57",
+                                "Time": {
+                                    "time": "1:24.718"
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

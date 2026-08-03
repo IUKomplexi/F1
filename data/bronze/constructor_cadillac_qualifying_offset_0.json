@@ -1,0 +1,708 @@
+{
+    "MRData": {
+        "xmlns": "",
+        "series": "f1",
+        "url": "https://api.jolpi.ca/ergast/f1/constructors/cadillac/qualifying/",
+        "limit": "100",
+        "offset": "0",
+        "total": "22",
+        "RaceTable": {
+            "constructorId": "cadillac",
+            "Races": [
+                {
+                    "season": "2026",
+                    "round": "1",
+                    "url": "https://en.wikipedia.org/wiki/2026_Australian_Grand_Prix",
+                    "raceName": "Australian Grand Prix",
+                    "Circuit": {
+                        "circuitId": "albert_park",
+                        "url": "https://en.wikipedia.org/wiki/Albert_Park_Circuit",
+                        "circuitName": "Albert Park Grand Prix Circuit",
+                        "Location": {
+                            "lat": "-37.8497",
+                            "long": "144.968",
+                            "locality": "Melbourne",
+                            "country": "Australia"
+                        }
+                    },
+                    "date": "2026-03-08",
+                    "time": "04:00:00Z",
+                    "QualifyingResults": [
+                        {
+                            "number": "11",
+                            "position": "18",
+                            "Driver": {
+                                "driverId": "perez",
+                                "permanentNumber": "11",
+                                "code": "PER",
+                                "url": "http://en.wikipedia.org/wiki/Sergio_P%C3%A9rez",
+                                "givenName": "Sergio",
+                                "familyName": "P\u00e9rez",
+                                "dateOfBirth": "1990-01-26",
+                                "nationality": "Mexican"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:22.605"
+                        },
+                        {
+                            "number": "77",
+                            "position": "19",
+                            "Driver": {
+                                "driverId": "bottas",
+                                "permanentNumber": "77",
+                                "code": "BOT",
+                                "url": "http://en.wikipedia.org/wiki/Valtteri_Bottas",
+                                "givenName": "Valtteri",
+                                "familyName": "Bottas",
+                                "dateOfBirth": "1989-08-28",
+                                "nationality": "Finnish"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:23.244"
+                        }
+                    ]
+                },
+                {
+                    "season": "2026",
+                    "round": "2",
+                    "url": "https://en.wikipedia.org/wiki/2026_Chinese_Grand_Prix",
+                    "raceName": "Chinese Grand Prix",
+                    "Circuit": {
+                        "circuitId": "shanghai",
+                        "url": "https://en.wikipedia.org/wiki/Shanghai_International_Circuit",
+                        "circuitName": "Shanghai International Circuit",
+                        "Location": {
+                            "lat": "31.3389",
+                            "long": "121.22",
+                            "locality": "Shanghai",
+                            "country": "China"
+                        }
+                    },
+                    "date": "2026-03-15",
+                    "time": "07:00:00Z",
+                    "QualifyingResults": [
+                        {
+                            "number": "77",
+                            "position": "20",
+                            "Driver": {
+                                "driverId": "bottas",
+                                "permanentNumber": "77",
+                                "code": "BOT",
+                                "url": "http://en.wikipedia.org/wiki/Valtteri_Bottas",
+                                "givenName": "Valtteri",
+                                "familyName": "Bottas",
+                                "dateOfBirth": "1989-08-28",
+                                "nationality": "Finnish"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:35.436"
+                        },
+                        {
+                            "number": "11",
+                            "position": "22",
+                            "Driver": {
+                                "driverId": "perez",
+                                "permanentNumber": "11",
+                                "code": "PER",
+                                "url": "http://en.wikipedia.org/wiki/Sergio_P%C3%A9rez",
+                                "givenName": "Sergio",
+                                "familyName": "P\u00e9rez",
+                                "dateOfBirth": "1990-01-26",
+                                "nationality": "Mexican"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:36.906"
+                        }
+                    ]
+                },
+                {
+                    "season": "2026",
+                    "round": "3",
+                    "url": "https://en.wikipedia.org/wiki/2026_Japanese_Grand_Prix",
+                    "raceName": "Japanese Grand Prix",
+                    "Circuit": {
+                        "circuitId": "suzuka",
+                        "url": "https://en.wikipedia.org/wiki/Suzuka_International_Racing_Course",
+                        "circuitName": "Suzuka Circuit",
+                        "Location": {
+                            "lat": "34.8431",
+                            "long": "136.541",
+                            "locality": "Suzuka",
+                            "country": "Japan"
+                        }
+                    },
+                    "date": "2026-03-29",
+                    "time": "05:00:00Z",
+                    "QualifyingResults": [
+                        {
+                            "number": "11",
+                            "position": "19",
+                            "Driver": {
+                                "driverId": "perez",
+                                "permanentNumber": "11",
+                                "code": "PER",
+                                "url": "http://en.wikipedia.org/wiki/Sergio_P%C3%A9rez",
+                                "givenName": "Sergio",
+                                "familyName": "P\u00e9rez",
+                                "dateOfBirth": "1990-01-26",
+                                "nationality": "Mexican"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:32.206"
+                        },
+                        {
+                            "number": "77",
+                            "position": "20",
+                            "Driver": {
+                                "driverId": "bottas",
+                                "permanentNumber": "77",
+                                "code": "BOT",
+                                "url": "http://en.wikipedia.org/wiki/Valtteri_Bottas",
+                                "givenName": "Valtteri",
+                                "familyName": "Bottas",
+                                "dateOfBirth": "1989-08-28",
+                                "nationality": "Finnish"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:32.330"
+                        }
+                    ]
+                },
+                {
+                    "season": "2026",
+                    "round": "4",
+                    "url": "https://en.wikipedia.org/wiki/2026_Miami_Grand_Prix",
+                    "raceName": "Miami Grand Prix",
+                    "Circuit": {
+                        "circuitId": "miami",
+                        "url": "https://en.wikipedia.org/wiki/Miami_International_Autodrome",
+                        "circuitName": "Miami International Autodrome",
+                        "Location": {
+                            "lat": "25.9581",
+                            "long": "-80.2389",
+                            "locality": "Miami",
+                            "country": "USA"
+                        }
+                    },
+                    "date": "2026-05-03",
+                    "time": "20:00:00Z",
+                    "QualifyingResults": [
+                        {
+                            "number": "77",
+                            "position": "19",
+                            "Driver": {
+                                "driverId": "bottas",
+                                "permanentNumber": "77",
+                                "code": "BOT",
+                                "url": "http://en.wikipedia.org/wiki/Valtteri_Bottas",
+                                "givenName": "Valtteri",
+                                "familyName": "Bottas",
+                                "dateOfBirth": "1989-08-28",
+                                "nationality": "Finnish"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:31.629"
+                        },
+                        {
+                            "number": "11",
+                            "position": "20",
+                            "Driver": {
+                                "driverId": "perez",
+                                "permanentNumber": "11",
+                                "code": "PER",
+                                "url": "http://en.wikipedia.org/wiki/Sergio_P%C3%A9rez",
+                                "givenName": "Sergio",
+                                "familyName": "P\u00e9rez",
+                                "dateOfBirth": "1990-01-26",
+                                "nationality": "Mexican"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:31.967"
+                        }
+                    ]
+                },
+                {
+                    "season": "2026",
+                    "round": "5",
+                    "url": "https://en.wikipedia.org/wiki/2026_Canadian_Grand_Prix",
+                    "raceName": "Canadian Grand Prix",
+                    "Circuit": {
+                        "circuitId": "villeneuve",
+                        "url": "https://en.wikipedia.org/wiki/Circuit_Gilles_Villeneuve",
+                        "circuitName": "Circuit Gilles Villeneuve",
+                        "Location": {
+                            "lat": "45.5",
+                            "long": "-73.5228",
+                            "locality": "Montreal",
+                            "country": "Canada"
+                        }
+                    },
+                    "date": "2026-05-24",
+                    "time": "20:00:00Z",
+                    "QualifyingResults": [
+                        {
+                            "number": "11",
+                            "position": "20",
+                            "Driver": {
+                                "driverId": "perez",
+                                "permanentNumber": "11",
+                                "code": "PER",
+                                "url": "http://en.wikipedia.org/wiki/Sergio_P%C3%A9rez",
+                                "givenName": "Sergio",
+                                "familyName": "P\u00e9rez",
+                                "dateOfBirth": "1990-01-26",
+                                "nationality": "Mexican"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:15.429"
+                        },
+                        {
+                            "number": "77",
+                            "position": "22",
+                            "Driver": {
+                                "driverId": "bottas",
+                                "permanentNumber": "77",
+                                "code": "BOT",
+                                "url": "http://en.wikipedia.org/wiki/Valtteri_Bottas",
+                                "givenName": "Valtteri",
+                                "familyName": "Bottas",
+                                "dateOfBirth": "1989-08-28",
+                                "nationality": "Finnish"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:16.272"
+                        }
+                    ]
+                },
+                {
+                    "season": "2026",
+                    "round": "6",
+                    "url": "https://en.wikipedia.org/wiki/2026_Monaco_Grand_Prix",
+                    "raceName": "Monaco Grand Prix",
+                    "Circuit": {
+                        "circuitId": "monaco",
+                        "url": "https://en.wikipedia.org/wiki/Circuit_de_Monaco",
+                        "circuitName": "Circuit de Monaco",
+                        "Location": {
+                            "lat": "43.7347",
+                            "long": "7.42056",
+                            "locality": "Monte Carlo",
+                            "country": "Monaco"
+                        }
+                    },
+                    "date": "2026-06-07",
+                    "time": "13:00:00Z",
+                    "QualifyingResults": [
+                        {
+                            "number": "11",
+                            "position": "18",
+                            "Driver": {
+                                "driverId": "perez",
+                                "permanentNumber": "11",
+                                "code": "PER",
+                                "url": "http://en.wikipedia.org/wiki/Sergio_P%C3%A9rez",
+                                "givenName": "Sergio",
+                                "familyName": "P\u00e9rez",
+                                "dateOfBirth": "1990-01-26",
+                                "nationality": "Mexican"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:14.747"
+                        },
+                        {
+                            "number": "77",
+                            "position": "20",
+                            "Driver": {
+                                "driverId": "bottas",
+                                "permanentNumber": "77",
+                                "code": "BOT",
+                                "url": "http://en.wikipedia.org/wiki/Valtteri_Bottas",
+                                "givenName": "Valtteri",
+                                "familyName": "Bottas",
+                                "dateOfBirth": "1989-08-28",
+                                "nationality": "Finnish"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:15.283"
+                        }
+                    ]
+                },
+                {
+                    "season": "2026",
+                    "round": "7",
+                    "url": "https://en.wikipedia.org/wiki/2026_Barcelona-Catalunya",
+                    "raceName": "Barcelona Grand Prix",
+                    "Circuit": {
+                        "circuitId": "catalunya",
+                        "url": "https://en.wikipedia.org/wiki/Circuit_de_Barcelona-Catalunya",
+                        "circuitName": "Circuit de Barcelona-Catalunya",
+                        "Location": {
+                            "lat": "41.57",
+                            "long": "2.26111",
+                            "locality": "Barcelona",
+                            "country": "Spain"
+                        }
+                    },
+                    "date": "2026-06-14",
+                    "time": "13:00:00Z",
+                    "QualifyingResults": [
+                        {
+                            "number": "11",
+                            "position": "19",
+                            "Driver": {
+                                "driverId": "perez",
+                                "permanentNumber": "11",
+                                "code": "PER",
+                                "url": "http://en.wikipedia.org/wiki/Sergio_P%C3%A9rez",
+                                "givenName": "Sergio",
+                                "familyName": "P\u00e9rez",
+                                "dateOfBirth": "1990-01-26",
+                                "nationality": "Mexican"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:17.545"
+                        },
+                        {
+                            "number": "77",
+                            "position": "20",
+                            "Driver": {
+                                "driverId": "bottas",
+                                "permanentNumber": "77",
+                                "code": "BOT",
+                                "url": "http://en.wikipedia.org/wiki/Valtteri_Bottas",
+                                "givenName": "Valtteri",
+                                "familyName": "Bottas",
+                                "dateOfBirth": "1989-08-28",
+                                "nationality": "Finnish"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:17.757"
+                        }
+                    ]
+                },
+                {
+                    "season": "2026",
+                    "round": "8",
+                    "url": "https://en.wikipedia.org/wiki/2026_Austrian_Grand_Prix",
+                    "raceName": "Austrian Grand Prix",
+                    "Circuit": {
+                        "circuitId": "red_bull_ring",
+                        "url": "https://en.wikipedia.org/wiki/Red_Bull_Ring",
+                        "circuitName": "Red Bull Ring",
+                        "Location": {
+                            "lat": "47.2197",
+                            "long": "14.7647",
+                            "locality": "Spielberg",
+                            "country": "Austria"
+                        }
+                    },
+                    "date": "2026-06-28",
+                    "time": "13:00:00Z",
+                    "QualifyingResults": [
+                        {
+                            "number": "11",
+                            "position": "19",
+                            "Driver": {
+                                "driverId": "perez",
+                                "permanentNumber": "11",
+                                "code": "PER",
+                                "url": "http://en.wikipedia.org/wiki/Sergio_P%C3%A9rez",
+                                "givenName": "Sergio",
+                                "familyName": "P\u00e9rez",
+                                "dateOfBirth": "1990-01-26",
+                                "nationality": "Mexican"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:08.945"
+                        },
+                        {
+                            "number": "77",
+                            "position": "20",
+                            "Driver": {
+                                "driverId": "bottas",
+                                "permanentNumber": "77",
+                                "code": "BOT",
+                                "url": "http://en.wikipedia.org/wiki/Valtteri_Bottas",
+                                "givenName": "Valtteri",
+                                "familyName": "Bottas",
+                                "dateOfBirth": "1989-08-28",
+                                "nationality": "Finnish"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:09.030"
+                        }
+                    ]
+                },
+                {
+                    "season": "2026",
+                    "round": "9",
+                    "url": "https://en.wikipedia.org/wiki/2026_British_Grand_Prix",
+                    "raceName": "British Grand Prix",
+                    "Circuit": {
+                        "circuitId": "silverstone",
+                        "url": "https://en.wikipedia.org/wiki/Silverstone_Circuit",
+                        "circuitName": "Silverstone Circuit",
+                        "Location": {
+                            "lat": "52.0786",
+                            "long": "-1.01694",
+                            "locality": "Silverstone",
+                            "country": "UK"
+                        }
+                    },
+                    "date": "2026-07-05",
+                    "time": "14:00:00Z",
+                    "QualifyingResults": [
+                        {
+                            "number": "77",
+                            "position": "18",
+                            "Driver": {
+                                "driverId": "bottas",
+                                "permanentNumber": "77",
+                                "code": "BOT",
+                                "url": "http://en.wikipedia.org/wiki/Valtteri_Bottas",
+                                "givenName": "Valtteri",
+                                "familyName": "Bottas",
+                                "dateOfBirth": "1989-08-28",
+                                "nationality": "Finnish"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:31.227"
+                        },
+                        {
+                            "number": "11",
+                            "position": "20",
+                            "Driver": {
+                                "driverId": "perez",
+                                "permanentNumber": "11",
+                                "code": "PER",
+                                "url": "http://en.wikipedia.org/wiki/Sergio_P%C3%A9rez",
+                                "givenName": "Sergio",
+                                "familyName": "P\u00e9rez",
+                                "dateOfBirth": "1990-01-26",
+                                "nationality": "Mexican"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:31.451"
+                        }
+                    ]
+                },
+                {
+                    "season": "2026",
+                    "round": "10",
+                    "url": "https://en.wikipedia.org/wiki/2026_Belgian_Grand_Prix",
+                    "raceName": "Belgian Grand Prix",
+                    "Circuit": {
+                        "circuitId": "spa",
+                        "url": "https://en.wikipedia.org/wiki/Circuit_de_Spa-Francorchamps",
+                        "circuitName": "Circuit de Spa-Francorchamps",
+                        "Location": {
+                            "lat": "50.4372",
+                            "long": "5.97139",
+                            "locality": "Spa",
+                            "country": "Belgium"
+                        }
+                    },
+                    "date": "2026-07-19",
+                    "time": "13:00:00Z",
+                    "QualifyingResults": [
+                        {
+                            "number": "77",
+                            "position": "19",
+                            "Driver": {
+                                "driverId": "bottas",
+                                "permanentNumber": "77",
+                                "code": "BOT",
+                                "url": "http://en.wikipedia.org/wiki/Valtteri_Bottas",
+                                "givenName": "Valtteri",
+                                "familyName": "Bottas",
+                                "dateOfBirth": "1989-08-28",
+                                "nationality": "Finnish"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:47.823"
+                        },
+                        {
+                            "number": "11",
+                            "position": "20",
+                            "Driver": {
+                                "driverId": "perez",
+                                "permanentNumber": "11",
+                                "code": "PER",
+                                "url": "http://en.wikipedia.org/wiki/Sergio_P%C3%A9rez",
+                                "givenName": "Sergio",
+                                "familyName": "P\u00e9rez",
+                                "dateOfBirth": "1990-01-26",
+                                "nationality": "Mexican"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:47.971"
+                        }
+                    ]
+                },
+                {
+                    "season": "2026",
+                    "round": "11",
+                    "url": "https://en.wikipedia.org/wiki/2026_Hungarian_Grand_Prix",
+                    "raceName": "Hungarian Grand Prix",
+                    "Circuit": {
+                        "circuitId": "hungaroring",
+                        "url": "https://en.wikipedia.org/wiki/Hungaroring",
+                        "circuitName": "Hungaroring",
+                        "Location": {
+                            "lat": "47.5789",
+                            "long": "19.2486",
+                            "locality": "Budapest",
+                            "country": "Hungary"
+                        }
+                    },
+                    "date": "2026-07-26",
+                    "time": "13:00:00Z",
+                    "QualifyingResults": [
+                        {
+                            "number": "77",
+                            "position": "21",
+                            "Driver": {
+                                "driverId": "bottas",
+                                "permanentNumber": "77",
+                                "code": "BOT",
+                                "url": "http://en.wikipedia.org/wiki/Valtteri_Bottas",
+                                "givenName": "Valtteri",
+                                "familyName": "Bottas",
+                                "dateOfBirth": "1989-08-28",
+                                "nationality": "Finnish"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:20.886"
+                        },
+                        {
+                            "number": "11",
+                            "position": "22",
+                            "Driver": {
+                                "driverId": "perez",
+                                "permanentNumber": "11",
+                                "code": "PER",
+                                "url": "http://en.wikipedia.org/wiki/Sergio_P%C3%A9rez",
+                                "givenName": "Sergio",
+                                "familyName": "P\u00e9rez",
+                                "dateOfBirth": "1990-01-26",
+                                "nationality": "Mexican"
+                            },
+                            "Constructor": {
+                                "constructorId": "cadillac",
+                                "url": "https://en.wikipedia.org/wiki/Cadillac_in_Formula_One",
+                                "name": "Cadillac F1 Team",
+                                "nationality": "American"
+                            },
+                            "Q1": "1:21.322"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
