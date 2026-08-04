@@ -61,13 +61,13 @@ def process_results() -> pd.DataFrame:
                             "grid": result.get("grid"),
                             "positionOrder": result.get("position"),
                             "points": result.get("points"),
+                            "status": result.get("status"),  # FIX: Extracted status for DNF filtering
                         }
                     )
 
     df = pd.DataFrame(results_list)
     df.replace(to_replace=r"\N", value=np.nan, inplace=True)
     
-    # Deduplicate across combined Driver/Constructor JSON caches
     df = df.drop_duplicates(subset=["raceId", "driverId"]).reset_index(drop=True)
     
     df["grid"] = pd.to_numeric(df["grid"], errors="coerce")
@@ -81,6 +81,7 @@ def process_results() -> pd.DataFrame:
 
 
 def process_qualifying() -> pd.DataFrame:
+    # (Remains identical to original implementation)
     print("--- Parsing Fact Qualifying ---")
     qual_list: list[dict[str, Any]] = []
 
@@ -131,6 +132,7 @@ def process_qualifying() -> pd.DataFrame:
 
 
 def process_sprints() -> pd.DataFrame:
+    # (Remains identical to original implementation)
     print("--- Parsing Fact Sprints ---")
     sprint_list: list[dict[str, Any]] = []
 

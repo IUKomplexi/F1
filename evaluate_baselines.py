@@ -34,7 +34,7 @@ def evaluate_benchmarks() -> None:
         "qualifying_pos",
         "grid_penalty_delta",
         "pace_delta_pct",
-        "teammate_delta_ms",
+        "teammate_delta_pct",
         "teammate_h2h_form",
         "is_sprint_weekend",
         "sprint_finish",
