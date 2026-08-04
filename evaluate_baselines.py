@@ -9,9 +9,8 @@ GOLD_PATH = "./data/gold/f1_feature_matrix.parquet"
 
 
 def evaluate_benchmarks() -> None:
-    print("=== F1 PREDICTIVE BASELINE BENCHMARKING ===")
+    print("=== BASELINE ===")
 
-    # 1. Load Feature Matrix
     if not os.path.exists(GOLD_PATH):
         raise FileNotFoundError(f"Gold feature matrix not found at {GOLD_PATH}")
 
@@ -22,8 +21,8 @@ def evaluate_benchmarks() -> None:
 
     df = df.sort_values(by=["season", "round"]).reset_index(drop=True)
 
-    # 2. Train-Test Split (Train: 2014-2025 | Test: 2026)
-    train_df = df[df["season"] < 2026].copy()
+    # Train Test Split
+    train_df = df[df["season"] < 2025].copy()
     test_df = df[df["season"] == 2026].copy()
 
     features = [

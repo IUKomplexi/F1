@@ -8,9 +8,8 @@ GOLD_PATH = "./data/gold/f1_feature_matrix.parquet"
 
 
 def train_lgbm_ranker() -> None:
-    print("=== PHASE 4: MODEL TRAINING (LGBMRANKER) ===")
+    print("=== MODEL TRAINING ===")
 
-    # 1. Load Feature Matrix
     if not os.path.exists(GOLD_PATH):
         raise FileNotFoundError(f"Gold feature matrix not found at {GOLD_PATH}")
 
