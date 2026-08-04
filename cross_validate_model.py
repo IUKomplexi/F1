@@ -17,34 +17,24 @@ def run_cross_validation() -> None:
         raise FileNotFoundError(f" Feature matrix not found at {GOLD_PATH}")
 
     df = pd.read_parquet(GOLD_PATH)
-    cat_cols = ["circuitId", "driverId", "constructorId", "regulatory_era"]
-    for col in cat_cols:
-        df[col] = df[col].astype("category")
-
-    # Filter up to 2025
-    df = df[df["season"] <= 2025].sort_values(by=["season", "round"]).reset_index(drop=True)
-
     features = [
-        "circuitId",
-        "driverId",
-        "constructorId",
-        "grid",
         "qualifying_pos",
         "grid_penalty_delta",
         "pace_delta_pct",
         "teammate_delta_pct",
         "teammate_h2h_form",
-        "is_sprint_weekend",
         "sprint_finish",
         "driver_pts_lag",
         "team_pts_lag",
-        "team_point_contribution_pct",
         "driver_form_ewma",
         "constructor_form_ewma",
         "track_retention_idx",
-        "pace_x_overtaking",
-        "grid_x_retention",
-        "regulatory_era",
+        "track_retention_confidence",
+        "driver_dnf_rate_10",
+        "constructor_dnf_rate_10",
+        "driver_team_dnf_rate_10",
+        "pu_dnf_rate_10",
+        "circuit_dnf_rate_5yr",
     ]
     target = "positionOrder"
 
@@ -86,7 +76,6 @@ def run_cross_validation() -> None:
             eval_X=val_fold[features],
             eval_y=y_val_rel,
             eval_group=[val_groups],
-            categorical_feature=cat_cols,
         )
 
         # Predictions
