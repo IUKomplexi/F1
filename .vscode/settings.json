@@ -1,9 +1,8 @@
 {
     "conventionalCommits.scopes": [
-        "Implementation Plan",
         "Phase 1 JSON Pipeline",
-        "Phase 2  JSON to Parseq",
-        "Phase 3 Gold Feature",
-        "Phase 4 Training"
+        "Phase 2 JSON to Parseq",
+        "Phase 3 Feature Engineering",
+        "Phase 4 Training Model",
     ]
 }
