@@ -5,6 +5,8 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
+from model_utils import get_label_gain, position_to_relevance
+
 GOLD_PATH = "./data/gold/f1_feature_matrix.parquet"
 
 
@@ -40,6 +42,8 @@ def run_cross_validation() -> None:
         "driver_form_ewma",
         "constructor_form_ewma",
         "track_retention_idx",
+        "pace_x_overtaking",
+        "grid_x_retention",
         "regulatory_era",
     ]
     target = "positionOrder"
@@ -59,14 +63,15 @@ def run_cross_validation() -> None:
         train_groups = train_fold.groupby("raceId", sort=False).size().to_numpy()
         val_groups = val_fold.groupby("raceId", sort=False).size().to_numpy()
 
-        max_pos_floor = int(max(df[target].max(), 30))
-        y_train_rel = (max_pos_floor - train_fold[target]).astype(int)
-        y_val_rel = (max_pos_floor - val_fold[target]).astype(int)
+        # Convert target to F1 championship points-scaled relevance
+        y_train_rel = position_to_relevance(train_fold[target])
+        y_val_rel = position_to_relevance(val_fold[target])
 
         # LGBM Ranker
         ranker = lgb.LGBMRanker(
             objective="lambdarank",
             metric="ndcg",
+            label_gain=get_label_gain(),
             n_estimators=100,
             learning_rate=0.03,
             num_leaves=15,          

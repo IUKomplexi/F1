@@ -12,7 +12,7 @@ def run_smoke_test(parquet_path: str) -> None:
         return
 
     # 1. Isolate Features (X) and Target (y)
-    drop_cols = ["raceId", "driverId", "constructorId", "positionOrder", "status"]
+    drop_cols = ["raceId", "driverId", "constructorId", "positionOrder", "status", "is_classified"]
     
     numeric_df: pd.DataFrame = df.select_dtypes(include=['number'])
     features: list[str] = [c for c in numeric_df.columns if c not in drop_cols]

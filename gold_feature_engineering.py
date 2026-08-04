@@ -4,10 +4,26 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from model_utils import classify_status
+
 SILVER_DIR = "./data/silver"
 GOLD_DIR = "./data/gold"
 
 os.makedirs(GOLD_DIR, exist_ok=True)
+
+# --- EWMA Decay Constants ---
+# Off-season decay: halve constructor momentum (winter development uncertainty)
+OFF_SEASON_DECAY = 0.5
+# Regulation reset: aggressive 90% decay (car hierarchy is unknown)
+REGULATION_RESET_DECAY = 0.1
+# Summer break: mild 15% decay (teams bring focused upgrades)
+SUMMER_BREAK_DECAY = 0.85
+# Regulation reset seasons
+REGULATION_RESET_SEASONS = {2022, 2026}
+# Approximate post-summer-break round (hardcoded midpoint)
+SUMMER_BREAK_ROUND = 14
+# Driver form regulation reset decay (talent transfers, but baseline shifts)
+DRIVER_REG_RESET_DECAY = 0.3
 
 
 def map_regulatory_era(season: int) -> str:
@@ -170,6 +186,15 @@ def generate_gold_features() -> pd.DataFrame:
         .fillna(historical_median_pos)
     )
 
+    # --- Driver EWMA: Regulation Reset Decay ---
+    # Driver talent persists but baseline performance expectation shifts
+    for reset_season in REGULATION_RESET_SEASONS:
+        reset_mask = df["season"] == reset_season
+        first_round = df.loc[reset_mask, "round"].min() if reset_mask.any() else None
+        if first_round is not None:
+            driver_reset_mask = reset_mask & (df["round"] == first_round)
+            df.loc[driver_reset_mask, "driver_form_ewma"] *= DRIVER_REG_RESET_DECAY
+
     df_team_pts_per_race = (
         df.groupby(["season", "round", "constructorId"])["total_weekend_pts"]
         .sum()
@@ -188,10 +213,34 @@ def generate_gold_features() -> pd.DataFrame:
         how="left",
     )
 
+    # --- Constructor EWMA Decay ---
+    # a) Off-season decay: halve momentum at Round 1 of each season
+    season_first_rounds = df.groupby("season")["round"].transform("min")
+    is_season_start = df["round"] == season_first_rounds
+    df.loc[is_season_start, "constructor_form_ewma"] *= OFF_SEASON_DECAY
+
+    # b) Regulation reset: aggressive additional decay at regulation change seasons
+    for reset_season in REGULATION_RESET_SEASONS:
+        reset_mask = is_season_start & (df["season"] == reset_season)
+        df.loc[reset_mask, "constructor_form_ewma"] *= REGULATION_RESET_DECAY
+
+    # c) Summer break decay: mild decay at post-summer-break round
+    is_post_summer = df["round"] == SUMMER_BREAK_ROUND
+    df.loc[is_post_summer, "constructor_form_ewma"] *= SUMMER_BREAK_DECAY
+
     df_retention = compute_track_retention(df_results)
     df = pd.merge(df, df_retention, on=["circuitId", "season"], how="left")
     df["track_retention_idx"] = df["track_retention_idx"].fillna(0.5)
     df["regulatory_era"] = df["season"].apply(map_regulatory_era)
+
+    # --- Interaction Features ---
+    # Pace advantage is worth MORE on high-overtaking tracks (low retention index)
+    df["pace_x_overtaking"] = df["pace_delta_pct"] * (1 - df["track_retention_idx"])
+    # Grid advantage is worth MORE on low-overtaking / processional tracks
+    df["grid_x_retention"] = df["grid"] * df["track_retention_idx"]
+
+    # --- Classification Target (for two-stage model) ---
+    df["is_classified"] = classify_status(df["status"])
 
     gold_features = [
         "raceId",
@@ -214,8 +263,11 @@ def generate_gold_features() -> pd.DataFrame:
         "driver_form_ewma",
         "constructor_form_ewma",
         "track_retention_idx",
+        "pace_x_overtaking",   # NEW: Interaction feature
+        "grid_x_retention",    # NEW: Interaction feature
         "regulatory_era",
         "status",              # FIX: Passed status through to Gold for Train filtering
+        "is_classified",       # NEW: Two-stage model target (Stage 1)
         "positionOrder",
     ]
 

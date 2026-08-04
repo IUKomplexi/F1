@@ -4,6 +4,8 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
+from model_utils import get_label_gain, position_to_relevance
+
 GOLD_PATH = "./data/gold/f1_feature_matrix.parquet"
 
 
@@ -51,6 +53,8 @@ def train_lgbm_ranker() -> None:
         "driver_form_ewma",
         "constructor_form_ewma",
         "track_retention_idx",
+        "pace_x_overtaking",
+        "grid_x_retention",
         "regulatory_era",
     ]
     target = "positionOrder"
@@ -65,17 +69,17 @@ def train_lgbm_ranker() -> None:
     train_groups = train_df.groupby("raceId", sort=False).size().to_numpy()
     test_groups = test_df.groupby("raceId", sort=False).size().to_numpy()
 
-    # Convert target variable to non-negative relevance scores for LambdaRank (P1 = highest relevance score)
-    # Using 30 guarantees all relevance labels stay >= 0 even with large historical grids
-    max_pos_floor = int(max(df[target].max(), 30))
-    y_train_rel = (max_pos_floor - y_train).astype(int)
-    y_test_rel = (max_pos_floor - y_test).astype(int)
+    # Convert target to F1 championship points-scaled relevance for LambdaRank
+    # This forces the ranker to spend tree-split budget on the high-value top grid
+    y_train_rel = position_to_relevance(y_train)
+    y_test_rel = position_to_relevance(y_test)
 
     # 5. Initialize and Train LGBMRanker
     ranker = lgb.LGBMRanker(
         objective="lambdarank",
         metric="ndcg",
         eval_at=[1, 3, 10],
+        label_gain=get_label_gain(),
         n_estimators=150,
         learning_rate=0.05,
         num_leaves=31,

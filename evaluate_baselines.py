@@ -5,6 +5,8 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
+from model_utils import get_label_gain, position_to_relevance
+
 GOLD_PATH = "./data/gold/f1_feature_matrix.parquet"
 
 
@@ -43,6 +45,8 @@ def evaluate_benchmarks() -> None:
         "driver_form_ewma",
         "constructor_form_ewma",
         "track_retention_idx",
+        "pace_x_overtaking",
+        "grid_x_retention",
         "regulatory_era",
     ]
     target = "positionOrder"
@@ -50,15 +54,16 @@ def evaluate_benchmarks() -> None:
     train_groups = train_df.groupby("raceId", sort=False).size().to_numpy()
     test_groups = test_df.groupby("raceId", sort=False).size().to_numpy()
 
-    max_pos_floor = int(max(df[target].max(), 30))
-    y_train_rel = (max_pos_floor - train_df[target]).astype(int)
-    y_test_rel = (max_pos_floor - test_df[target]).astype(int)
+    # Convert target to F1 championship points-scaled relevance for LambdaRank
+    y_train_rel = position_to_relevance(train_df[target])
+    y_test_rel = position_to_relevance(test_df[target])
 
     # 3. Train Learning-to-Rank Model
     ranker = lgb.LGBMRanker(
         objective="lambdarank",
         metric="ndcg",
         eval_at=[1, 3, 10],
+        label_gain=get_label_gain(),
         n_estimators=150,
         learning_rate=0.05,
         num_leaves=31,
