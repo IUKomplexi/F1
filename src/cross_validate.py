@@ -5,9 +5,8 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
+from config import GOLD_PATH
 from model_utils import get_label_gain, position_to_relevance
-
-GOLD_PATH = "./data/gold/f1_feature_matrix.parquet"
 
 
 def run_cross_validation() -> None:

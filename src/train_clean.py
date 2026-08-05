@@ -13,13 +13,12 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
+from config import GOLD_PATH
 from model_utils import (
     get_label_gain,
     position_to_relevance,
     expected_points_error,
 )
-
-GOLD_PATH = "./data/gold/f1_feature_matrix.parquet"
 
 # Clean feature set (v3)
 FEATURES = [

@@ -1,23 +1,33 @@
+import logging
 import os
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
-from model_utils import classify_status, get_pu_manufacturer
+from config import (
+    DNF_RATE_FALLBACK,
+    DRIVER_REG_RESET_DECAY,
+    GOLD_DIR,
+    GOLD_PATH,
+    OFF_SEASON_DECAY,
+    PACE_DELTA_FALLBACK,
+    REGULATION_RESET_DECAY,
+    RETENTION_FALLBACK,
+    RETENTION_WINDOW_YEARS,
+    RESULTS_PATH,
+    QUALIFYING_PATH,
+    SPRINTS_PATH,
+    SUMMER_BREAK_DECAY,
+    SUMMER_BREAK_ROUND,
+    TEAMMATE_DELTA_FILL,
+    setup_logging,
+)
+from model_utils import classify_status, compute_decayed_ewma, get_pu_manufacturer
 
-SILVER_DIR = "./data/silver"
-GOLD_DIR = "./data/gold"
+logger = logging.getLogger(__name__)
 
 os.makedirs(GOLD_DIR, exist_ok=True)
-
-# --- Default EWMA Decay Constants (Optimized via Grid Search) ---
-OFF_SEASON_DECAY = 0.3
-REGULATION_RESET_DECAY = 0.05
-SUMMER_BREAK_DECAY = 0.7
-REGULATION_RESET_SEASONS = {2022, 2026}
-SUMMER_BREAK_ROUND = 13
-DRIVER_REG_RESET_DECAY = 0.7
 
 
 def map_regulatory_era(season: int) -> str:
@@ -43,7 +53,7 @@ def compute_track_retention(df_results: pd.DataFrame) -> pd.DataFrame:
                 r = p_df["grid"].corr(p_df["positionOrder"], method="spearman")
                 if pd.notna(r):
                     all_corrs.append(float(r))
-    global_mean_retention = float(np.mean(all_corrs)) if all_corrs else 0.55
+    global_mean_retention = float(np.mean(all_corrs)) if all_corrs else RETENTION_FALLBACK
 
     for circuit in circuits:
         circuit_df: pd.DataFrame = df_results[
@@ -59,7 +69,7 @@ def compute_track_retention(df_results: pd.DataFrame) -> pd.DataFrame:
                 & (circuit_df["season"] >= season - 5)
             ]
             past_years = past_df["season"].nunique()
-            confidence = min(past_years / 5.0, 1.0)
+            confidence = min(past_years / RETENTION_WINDOW_YEARS, 1.0)
 
             if len(past_df) >= 10:
                 corr_val = past_df["grid"].corr(
@@ -91,17 +101,17 @@ def generate_gold_features(
     driver_reg_reset_decay: float = DRIVER_REG_RESET_DECAY,
     summer_break_round: int = SUMMER_BREAK_ROUND,
 ) -> pd.DataFrame:
-    print("=== PHASE 3: GOLD LAYER FEATURE ENGINEERING (CLEAN v3) ===")
+    logger.info("=== PHASE 3: GOLD LAYER FEATURE ENGINEERING (CLEAN v3) ===")
 
-    df_results = pd.read_parquet(os.path.join(SILVER_DIR, "fact_results.parquet"))
-    df_qualifying = pd.read_parquet(os.path.join(SILVER_DIR, "fact_qualifying.parquet"))
-    df_sprints = pd.read_parquet(os.path.join(SILVER_DIR, "fact_sprints.parquet"))
+    df_results = pd.read_parquet(RESULTS_PATH)
+    df_qualifying = pd.read_parquet(QUALIFYING_PATH)
+    df_sprints = pd.read_parquet(SPRINTS_PATH)
 
     # Exclude DNS (Did Not Start) entries
     dns_mask = df_results["status"].str.contains("DNS|Did not start", case=False, na=False)
     dns_count = int(dns_mask.sum())
     df_results = df_results[~dns_mask].copy()
-    print(f"Removed {dns_count} DNS entries from dataset.")
+    logger.info("Removed %d DNS entries from dataset.", dns_count)
 
     df_results = df_results.sort_values(by=["season", "round"]).reset_index(drop=True)
 
@@ -137,15 +147,15 @@ def generate_gold_features(
         df["pace_delta_pct"]
         .fillna(df["pace_delta_pct_tm"] + 1.0)
         .fillna(race_max_pace + 1.0)
-        .fillna(5.0) 
+        .fillna(PACE_DELTA_FALLBACK) 
     )
 
     df["teammate_delta_pct"] = ((df["driver_best_q_ms"] - df["driver_best_q_ms_tm"]) / df["driver_best_q_ms_tm"]) * 100
     
     df["teammate_delta_pct"] = np.where(
-        df["driver_best_q_ms"].isna() & df["driver_best_q_ms_tm"].notna(), 1.5,
+        df["driver_best_q_ms"].isna() & df["driver_best_q_ms_tm"].notna(), TEAMMATE_DELTA_FILL,
         np.where(
-            df["driver_best_q_ms"].notna() & df["driver_best_q_ms_tm"].isna(), -1.5,
+            df["driver_best_q_ms"].notna() & df["driver_best_q_ms_tm"].isna(), -TEAMMATE_DELTA_FILL,
             df["teammate_delta_pct"].fillna(0.0)
         )
     )
@@ -158,7 +168,7 @@ def generate_gold_features(
 
     df["teammate_h2h_form"] = (
         df.groupby("driverId")["h2h_win"]
-        .transform(lambda x: x.shift(1).ewm(alpha=0.4, min_periods=1).mean())
+        .transform(lambda x: x.shift(1).ewm(alpha=EWMA_ALPHA, min_periods=1).mean())
         .fillna(0.5)
     )
 
@@ -194,56 +204,20 @@ def generate_gold_features(
         how="left",
     )
 
-    historical_median_pos = float(df["positionOrder"].median())
-
-    df["driver_form_ewma"] = (
-        df.groupby("driverId")["positionOrder"]
-        .transform(lambda x: x.shift(1).ewm(alpha=0.4, min_periods=1).mean())
-        .fillna(historical_median_pos)
-    )
-
-    # --- Driver EWMA: Regulation Reset Decay ---
-    for reset_season in REGULATION_RESET_SEASONS:
-        reset_mask = df["season"] == reset_season
-        first_round = df.loc[reset_mask, "round"].min() if reset_mask.any() else None
-        if first_round is not None:
-            driver_reset_mask = reset_mask & (df["round"] == first_round)
-            df.loc[driver_reset_mask, "driver_form_ewma"] *= driver_reg_reset_decay
-
-    df_team_pts_per_race = (
-        df.groupby(["season", "round", "constructorId"])["total_weekend_pts"]
-        .sum()
-        .reset_index()
-        .sort_values(by=["season", "round"])
-    )
-    df_team_pts_per_race["constructor_form_ewma"] = (
-        df_team_pts_per_race.groupby("constructorId")["total_weekend_pts"]
-        .transform(lambda x: x.shift(1).ewm(alpha=0.4, min_periods=1).mean())
-        .fillna(0.0)
-    )
-    df = pd.merge(
+    # Driver & constructor form EWMA with decay (shared implementation)
+    df["driver_form_ewma"], df["constructor_form_ewma"] = compute_decayed_ewma(
         df,
-        df_team_pts_per_race[["season", "round", "constructorId", "constructor_form_ewma"]],
-        on=["season", "round", "constructorId"],
-        how="left",
+        off_season_decay=off_season_decay,
+        regulation_reset_decay=regulation_reset_decay,
+        summer_break_decay=summer_break_decay,
+        driver_reg_reset_decay=driver_reg_reset_decay,
+        summer_break_round=summer_break_round,
     )
-
-    # --- Constructor EWMA Decay ---
-    season_first_rounds = df.groupby("season")["round"].transform("min")
-    is_season_start = df["round"] == season_first_rounds
-    df.loc[is_season_start, "constructor_form_ewma"] *= off_season_decay
-
-    for reset_season in REGULATION_RESET_SEASONS:
-        reset_mask = is_season_start & (df["season"] == reset_season)
-        df.loc[reset_mask, "constructor_form_ewma"] *= regulation_reset_decay
-
-    is_post_summer = df["round"] == summer_break_round
-    df.loc[is_post_summer, "constructor_form_ewma"] *= summer_break_decay
 
     # Track retention with confidence weighting
     df_retention = compute_track_retention(df_results)
     df = pd.merge(df, df_retention, on=["circuitId", "season"], how="left")
-    df["track_retention_idx"] = df["track_retention_idx"].fillna(0.55)
+    df["track_retention_idx"] = df["track_retention_idx"].fillna(RETENTION_FALLBACK)
     df["track_retention_confidence"] = df["track_retention_confidence"].fillna(0.0)
     df["regulatory_era"] = df["season"].apply(map_regulatory_era)
 
@@ -260,13 +234,13 @@ def generate_gold_features(
     df["driver_dnf_rate_10"] = (
         df.groupby("driverId")["is_dnf"]
         .transform(lambda x: x.shift(1).rolling(10, min_periods=1).mean())
-        .fillna(0.17)
+        .fillna(DNF_RATE_FALLBACK)
     )
 
     df["constructor_dnf_rate_10"] = (
         df.groupby("constructorId")["is_dnf"]
         .transform(lambda x: x.shift(1).rolling(10, min_periods=1).mean())
-        .fillna(0.17)
+        .fillna(DNF_RATE_FALLBACK)
     )
 
     df["driver_team_dnf_rate_10"] = (
@@ -278,7 +252,7 @@ def generate_gold_features(
     df["pu_dnf_rate_10"] = (
         df.groupby("pu_manufacturer")["is_dnf"]
         .transform(lambda x: x.shift(1).rolling(10, min_periods=1).mean())
-        .fillna(0.17)
+        .fillna(DNF_RATE_FALLBACK)
     )
 
     # Circuit 5-year rolling DNF rate
@@ -290,7 +264,7 @@ def generate_gold_features(
             if len(past_c) >= 10:
                 c_rate = float((1.0 - past_c["is_classified"]).mean())
             else:
-                c_rate = 0.17
+                c_rate = DNF_RATE_FALLBACK
             circuit_dnf_records.append({
                 "circuitId": circuit,
                 "season": season,
@@ -298,7 +272,7 @@ def generate_gold_features(
             })
     df_circuit_dnf = pd.DataFrame(circuit_dnf_records).drop_duplicates(subset=["circuitId", "season"])
     df = pd.merge(df, df_circuit_dnf, on=["circuitId", "season"], how="left")
-    df["circuit_dnf_rate_5yr"] = df["circuit_dnf_rate_5yr"].fillna(0.17)
+    df["circuit_dnf_rate_5yr"] = df["circuit_dnf_rate_5yr"].fillna(DNF_RATE_FALLBACK)
 
     # Output Clean Gold Feature Matrix
     gold_features = [
@@ -333,13 +307,13 @@ def generate_gold_features(
     ]
 
     df_gold = df[gold_features].copy()
-    output_path = os.path.join(GOLD_DIR, "f1_feature_matrix.parquet")
-    df_gold.to_parquet(output_path, index=False)
+    df_gold.to_parquet(GOLD_PATH, index=False)
 
-    print("=== COMPLETE: Gold Layer Feature Matrix Ready (Clean v3) ===")
-    print(f"Saved: {output_path} | Shape: {df_gold.shape}")
+    logger.info("=== COMPLETE: Gold Layer Feature Matrix Ready (Clean v3) ===")
+    logger.info("Saved: %s | Shape: %s", GOLD_PATH, df_gold.shape)
     return df_gold
 
 
 if __name__ == "__main__":
+    setup_logging()
     generate_gold_features()

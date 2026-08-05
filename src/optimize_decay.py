@@ -10,13 +10,13 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
+from config import GOLD_PATH, VAL_SEASONS, REGULATION_RESET_SEASONS
 from model_utils import (
     get_label_gain,
     position_to_relevance,
     expected_points_error,
+    compute_decayed_ewma,
 )
-
-GOLD_PATH = "./data/gold/f1_feature_matrix.parquet"
 
 FEATURES = [
     "qualifying_pos",
@@ -39,75 +39,8 @@ FEATURES = [
 ]
 
 TARGET = "positionOrder"
-VAL_SEASONS = [2020, 2021, 2022, 2023, 2024, 2025]
-REGULATION_RESET_SEASONS = {2022, 2026}
 
 
-def compute_decayed_ewma(
-    df_work: pd.DataFrame,
-    off_season_decay: float,
-    regulation_reset_decay: float,
-    summer_break_decay: float,
-    driver_reg_reset_decay: float,
-    summer_break_round: int,
-) -> tuple[pd.Series, pd.Series]:
-    """Fast vectorized recomputation of driver and constructor EWMA with decay parameters."""
-    df_work = df_work.copy()
-    df_work["total_weekend_pts"] = df_work.get("points", 0.0) + df_work.get("sprint_points", 0.0)
-    
-    historical_median_pos = float(df_work["positionOrder"].median())
-
-    # Driver EWMA
-    driver_ewma = (
-        df_work.groupby("driverId")["positionOrder"]
-        .transform(lambda x: x.shift(1).ewm(alpha=0.4, min_periods=1).mean())
-        .fillna(historical_median_pos)
-    )
-
-    # Driver regulation reset decay
-    for reset_season in REGULATION_RESET_SEASONS:
-        reset_mask = df_work["season"] == reset_season
-        first_round = df_work.loc[reset_mask, "round"].min() if reset_mask.any() else None
-        if first_round is not None:
-            driver_reset_mask = reset_mask & (df_work["round"] == first_round)
-            driver_ewma.loc[driver_reset_mask] *= driver_reg_reset_decay
-
-    # Constructor EWMA
-    df_team_pts_per_race = (
-        df_work.groupby(["season", "round", "constructorId"])["total_weekend_pts"]
-        .sum()
-        .reset_index()
-        .sort_values(by=["season", "round"])
-    )
-    df_team_pts_per_race["constructor_form_ewma"] = (
-        df_team_pts_per_race.groupby("constructorId")["total_weekend_pts"]
-        .transform(lambda x: x.shift(1).ewm(alpha=0.4, min_periods=1).mean())
-        .fillna(0.0)
-    )
-    
-    df_merged = pd.merge(
-        df_work[["season", "round", "constructorId"]],
-        df_team_pts_per_race[["season", "round", "constructorId", "constructor_form_ewma"]],
-        on=["season", "round", "constructorId"],
-        how="left",
-    )
-    constructor_ewma = df_merged["constructor_form_ewma"].fillna(0.0).copy()
-
-    # Season start decay
-    season_first_rounds = df_work.groupby("season")["round"].transform("min")
-    is_season_start = df_work["round"] == season_first_rounds
-    constructor_ewma.loc[is_season_start] *= off_season_decay
-
-    # Regulation reset decay
-    for reset_season in REGULATION_RESET_SEASONS:
-        reset_mask = is_season_start & (df_work["season"] == reset_season)
-        constructor_ewma.loc[reset_mask] *= regulation_reset_decay
-
-    # Summer break decay
-    is_post_summer = df_work["round"] == summer_break_round
-    constructor_ewma.loc[is_post_summer] *= summer_break_decay
-
-    return driver_ewma, constructor_ewma
 
 
 def _evaluate_single_combination(args: tuple[pd.DataFrame, tuple[float, float, float, float, int]]) -> tuple[float, dict[str, Any]]:

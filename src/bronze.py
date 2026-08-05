@@ -1,18 +1,14 @@
 import json
+import logging
 import os
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 
-# --- Config ---
-BASE_URL = "https://api.jolpi.ca/ergast/f1/"
-BRONZE_DIR = "./data/bronze"
-HEADERS = {
-    "User-Agent": "F1_DATA&ANALYTICS_UNI/1.0",
-    "Accept": "application/json",
-}
-THROTTLE_DELAY = 0.5
+from config import BASE_URL, BRONZE_DIR, HEADERS, THROTTLE_DELAY, setup_logging
+
+logger = logging.getLogger(__name__)
 
 os.makedirs(BRONZE_DIR, exist_ok=True)
 
@@ -25,21 +21,21 @@ def fetch_paginated_endpoint(endpoint_path: str, filename_prefix: str):
     endpoint_path = endpoint_path.lstrip("/")
 
     while total is None or offset < total:
-        
+
         # Checkpoint
         safe_filename = f"{filename_prefix}_offset_{offset}.json".replace("/", "_")
         filepath = os.path.join(BRONZE_DIR, safe_filename)
 
         if os.path.exists(filepath):
-            print(f"    [Checkpoint] File exists: {filepath}. Skipping API call.")
+            logger.debug("Checkpoint hit, skipping API call: %s", filepath)
             with open(filepath, "r", encoding="utf-8") as f:
                 cached_data = json.load(f)
-            
+
             mr_data = cached_data.get("MRData", {})
             total = int(mr_data.get("total", 0))
             offset += limit
-            continue # Skip rest jump to offset
-        
+            continue  # Skip rest jump to offset
+
         time.sleep(THROTTLE_DELAY)  # Rate Limits
 
         # Create URL query
@@ -60,7 +56,9 @@ def fetch_paginated_endpoint(endpoint_path: str, filename_prefix: str):
                     break
             except urllib.error.HTTPError as e:
                 if e.code == 400:
-                    print(f"    [Warning] Invalid request for endpoint '{endpoint_path}', skipping.")
+                    logger.warning(
+                        "Invalid request for endpoint '%s', skipping.", endpoint_path
+                    )
                     return
                 if e.code in [429, 500, 502, 503, 504] and attempt < retries - 1:
                     retry_after = e.headers.get("Retry-After")
@@ -69,14 +67,19 @@ def fetch_paginated_endpoint(endpoint_path: str, filename_prefix: str):
                         if retry_after and retry_after.isdigit()
                         else backoff
                     )
-                    print(f"[Warning] HTTP {e.code} on attempt {attempt + 1}. Retrying in {wait_for}s...")
+                    logger.warning(
+                        "HTTP %s on attempt %d. Retrying in %ss...",
+                        e.code,
+                        attempt + 1,
+                        wait_for,
+                    )
                     time.sleep(wait_for)
                     backoff = max(backoff * 2, wait_for * 2)
                 else:
-                    print(f"    [Error] HTTP Failure: {e.code} - {e.reason}")
+                    logger.error("HTTP Failure: %s - %s", e.code, e.reason)
                     return
             except urllib.error.URLError as e:
-                print(f"Network error occurred: {e}")
+                logger.error("Network error occurred: %s", e)
 
         if not response_data:
             break
@@ -88,7 +91,7 @@ def fetch_paginated_endpoint(endpoint_path: str, filename_prefix: str):
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(response_data, f, indent=4)
 
-        print(f" Saved: {filepath} ({offset}/{total})")
+        logger.info("Saved: %s (%s/%s)", filepath, offset, total)
 
         if total == 0:
             break
@@ -98,7 +101,7 @@ def fetch_paginated_endpoint(endpoint_path: str, filename_prefix: str):
 
 def get_active_entities(year: int = 2026):
     """Get active grid, parse Grid"""
-    print(f"\n--- Active Grid for {year} ---")
+    logger.info("--- Active Grid for %s ---", year)
 
     fetch_paginated_endpoint(f"/{year}/drivers", f"active_drivers_{year}")
     fetch_paginated_endpoint(f"/{year}/constructors", f"active_constructors_{year}")
@@ -125,7 +128,7 @@ def get_active_entities(year: int = 2026):
 
 def get_historical_races(driver_ids: list[str], start_year: int = 2014) -> set[tuple[int, int]]:
     """Fetch all races participated in by the active drivers to build a master race list."""
-    print("\n--- Compiling Master Race List ---")
+    logger.info("--- Compiling Master Race List ---")
     unique_races: set[tuple[int, int]] = set()
 
     for driver in driver_ids:
@@ -143,49 +146,53 @@ def get_historical_races(driver_ids: list[str], start_year: int = 2014) -> set[t
                     for race in races:
                         season = int(race.get("season", 0))
                         round_no = int(race.get("round", 0))
-                        
+
                         # We only need the Hybrid Era onwards for our features
                         if season >= start_year:
                             unique_races.add((season, round_no))
-                            
+
     return unique_races
 
 
 def main():
-    print("=== BRONZE LAYER PIPELINE: NO SURVIVORSHIP BIAS ===")
+    logger.info("=== BRONZE LAYER PIPELINE: NO SURVIVORSHIP BIAS ===")
 
     driver_ids, _ = get_active_entities(year=2026)
-    print(f"Grid Analysis: Found {len(driver_ids)} drivers active for 2026.")
+    logger.info("Grid Analysis: Found %d drivers active for 2026.", len(driver_ids))
 
     master_races = get_historical_races(driver_ids, start_year=2014)
-    print(f"Master Race List: Found {len(master_races)} unique hybrid-era races featuring active drivers.")
+    logger.info(
+        "Master Race List: Found %d unique hybrid-era races featuring active drivers.",
+        len(master_races),
+    )
 
-    print("\n--- Extracting Full Grid Historical Records ---")
-    
+    logger.info("--- Extracting Full Grid Historical Records ---")
+
     # Sort chronologically to maintain sanity in the logs
     for season, round_no in sorted(master_races):
-        print(f"\n Processing Race: {season} Round {round_no}")
-        
+        logger.info("Processing Race: %s Round %s", season, round_no)
+
         # 1. Full Race Results
         fetch_paginated_endpoint(
-            f"/{season}/{round_no}/results", 
+            f"/{season}/{round_no}/results",
             f"race_{season}_{round_no}_results"
         )
-        
+
         # 2. Full Qualifying Results
         fetch_paginated_endpoint(
-            f"/{season}/{round_no}/qualifying", 
+            f"/{season}/{round_no}/qualifying",
             f"race_{season}_{round_no}_qualifying"
         )
-        
+
         # 3. Full Sprint Results (Ergast gracefully returns empty if no sprint occurred)
         fetch_paginated_endpoint(
-            f"/{season}/{round_no}/sprint", 
+            f"/{season}/{round_no}/sprint",
             f"race_{season}_{round_no}_sprint"
         )
 
-    print("\n=== COMPLETE: Full Historical Grids Cached ===")
+    logger.info("=== COMPLETE: Full Historical Grids Cached ===")
 
 
 if __name__ == "__main__":
+    setup_logging()
     main()

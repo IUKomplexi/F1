@@ -1,12 +1,14 @@
 import json
+import logging
 import os
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
-BRONZE_DIR = "./data/bronze"
-SILVER_DIR = "./data/silver"
+from config import BRONZE_DIR, RESULTS_PATH, SILVER_DIR, SPRINTS_PATH, QUALIFYING_PATH, setup_logging
+
+logger = logging.getLogger(__name__)
 
 os.makedirs(SILVER_DIR, exist_ok=True)
 
@@ -26,7 +28,7 @@ def parse_time_to_ms(time_str: str | None) -> float | None:
 
 
 def process_results() -> pd.DataFrame:
-    print("--- Parsing Fact Results ---")
+    logger.info("--- Parsing Fact Results ---")
     results_list: list[dict[str, Any]] = []
 
     for file in os.listdir(BRONZE_DIR):
@@ -74,15 +76,14 @@ def process_results() -> pd.DataFrame:
     df["positionOrder"] = pd.to_numeric(df["positionOrder"], errors="coerce")
     df["points"] = pd.to_numeric(df["points"], errors="coerce")
 
-    output_path = os.path.join(SILVER_DIR, "fact_results.parquet")
-    df.to_parquet(output_path, index=False)
-    print(f"Saved: {output_path} | Shape: {df.shape}")
+    df.to_parquet(RESULTS_PATH, index=False)
+    logger.info("Saved: %s | Shape: %s", RESULTS_PATH, df.shape)
     return df
 
 
 def process_qualifying() -> pd.DataFrame:
     # (Remains identical to original implementation)
-    print("--- Parsing Fact Qualifying ---")
+    logger.info("--- Parsing Fact Qualifying ---")
     qual_list: list[dict[str, Any]] = []
 
     for file in os.listdir(BRONZE_DIR):
@@ -125,15 +126,14 @@ def process_qualifying() -> pd.DataFrame:
                     )
 
     df = pd.DataFrame(qual_list).drop_duplicates(subset=["raceId", "driverId"])
-    output_path = os.path.join(SILVER_DIR, "fact_qualifying.parquet")
-    df.to_parquet(output_path, index=False)
-    print(f"Saved: {output_path} | Shape: {df.shape}")
+    df.to_parquet(QUALIFYING_PATH, index=False)
+    logger.info("Saved: %s | Shape: %s", QUALIFYING_PATH, df.shape)
     return df
 
 
 def process_sprints() -> pd.DataFrame:
     # (Remains identical to original implementation)
-    print("--- Parsing Fact Sprints ---")
+    logger.info("--- Parsing Fact Sprints ---")
     sprint_list: list[dict[str, Any]] = []
 
     for file in os.listdir(BRONZE_DIR):
@@ -168,14 +168,14 @@ def process_sprints() -> pd.DataFrame:
                     )
 
     df = pd.DataFrame(sprint_list).drop_duplicates(subset=["raceId", "driverId"])
-    output_path = os.path.join(SILVER_DIR, "fact_sprints.parquet")
-    df.to_parquet(output_path, index=False)
-    print(f"Saved: {output_path} | Shape: {df.shape}")
+    df.to_parquet(SPRINTS_PATH, index=False)
+    logger.info("Saved: %s | Shape: %s", SPRINTS_PATH, df.shape)
     return df
 
 
 if __name__ == "__main__":
-    print("=== SILVER LAYER PROCESSING ===")
+    setup_logging()
+    logger.info("=== SILVER LAYER PROCESSING ===")
     process_results()
     process_qualifying()
     process_sprints()

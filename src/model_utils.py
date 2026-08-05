@@ -1,7 +1,35 @@
-"""Update model_utils.py with points metrics and PU manufacturer mapping."""
+"""Shared helpers: relevance mapping, PU manufacturer mapping, metrics, and
+canonical feature/model definitions for the F1 prediction pipeline."""
 
 import numpy as np
 import pandas as pd
+import lightgbm as lgb
+
+from config import EWMA_ALPHA, REGULATION_RESET_SEASONS
+
+# Canonical clean-v3 feature set consumed by every training/eval script.
+FEATURES: list[str] = [
+    "qualifying_pos",
+    "grid_penalty_delta",
+    "pace_delta_pct",
+    "teammate_delta_pct",
+    "teammate_h2h_form",
+    "sprint_finish",
+    "driver_pts_lag",
+    "team_pts_lag",
+    "driver_form_ewma",
+    "constructor_form_ewma",
+    "track_retention_idx",
+    "track_retention_confidence",
+    "driver_dnf_rate_10",
+    "constructor_dnf_rate_10",
+    "driver_team_dnf_rate_10",
+    "pu_dnf_rate_10",
+    "circuit_dnf_rate_5yr",
+]
+
+TARGET = "positionOrder"
+CAT_COLS: list[str] = ["circuitId", "driverId", "constructorId", "regulatory_era"]
 
 # F1 championship points mapping (2025+ rules) extended with sub-1.0 decay tail
 # for positions outside the points. Values are multiplied by 100 to produce
@@ -151,3 +179,146 @@ def get_pu_manufacturer(constructor_id: str, season: int) -> str:
         
     # Default fallback if unknown
     return "other"
+
+
+def make_ranker(
+    n_estimators: int = 150,
+    learning_rate: float = 0.05,
+    num_leaves: int = 31,
+    min_child_samples: int = 20,
+    eval_at: list[int] | None = None,
+    **kwargs,
+):
+    """Build a configured LGBMRanker with the shared LambdaRank settings.
+
+    Centralizes the objective/metric/label_gain boilerplate; callers only
+    override the hyperparameters that differ between experiments.
+    """
+    params: dict = {
+        "objective": "lambdarank",
+        "metric": "ndcg",
+        "label_gain": get_label_gain(),
+        "n_estimators": n_estimators,
+        "learning_rate": learning_rate,
+        "num_leaves": num_leaves,
+        "min_child_samples": min_child_samples,
+        "random_state": 42,
+    }
+    if eval_at is not None:
+        params["eval_at"] = eval_at
+    params.update(kwargs)
+    return lgb.LGBMRanker(**params)
+
+
+def evaluate_predictions(
+    test_df: pd.DataFrame,
+    pred_col: str,
+    target: str = TARGET,
+) -> dict[str, float]:
+    """Compute the shared benchmark metrics for a prediction column.
+
+    Returns expected points error, P1/Top3/Top10 accuracy, per-race mean
+    Spearman rho, and per-race MAE - all averaged across the test set.
+    """
+    total_races = int(test_df["raceId"].nunique())
+
+    exp_pts_err = expected_points_error(test_df[target], test_df[pred_col])
+
+    p1 = int(((test_df[target] == 1) & (test_df[pred_col] == 1)).sum())
+    p1_acc = (p1 / total_races) * 100 if total_races else 0.0
+
+    top3 = int(((test_df[target] <= 3) & (test_df[pred_col] <= 3)).sum())
+    top3_acc = (top3 / (total_races * 3)) * 100 if total_races else 0.0
+
+    top10 = int(((test_df[target] <= 10) & (test_df[pred_col] <= 10)).sum())
+    top10_acc = (top10 / (total_races * 10)) * 100 if total_races else 0.0
+
+    rhos: list[float] = []
+    maes: list[float] = []
+    for _, g in test_df.groupby("raceId"):
+        r = g[target].corr(g[pred_col], method="spearman")
+        if pd.notna(r):
+            rhos.append(float(r))
+        maes.append(float(np.mean(np.abs(g[target] - g[pred_col]))))
+    avg_rho = float(np.mean(rhos)) if rhos else 0.0
+    avg_mae = float(np.mean(maes)) if maes else 0.0
+
+    return {
+        "exp_pts_err": exp_pts_err,
+        "p1_acc": p1_acc,
+        "top3_acc": top3_acc,
+        "top10_acc": top10_acc,
+        "spearman_rho": avg_rho,
+        "mae": avg_mae,
+    }
+
+
+def compute_decayed_ewma(
+    df_work: pd.DataFrame,
+    off_season_decay: float,
+    regulation_reset_decay: float,
+    summer_break_decay: float,
+    driver_reg_reset_decay: float,
+    summer_break_round: int,
+) -> tuple[pd.Series, pd.Series]:
+    """Recompute driver and constructor EWMA features with decay parameters.
+
+    Shared by the gold feature builder and the decay-parameter grid search so
+    the feature math is defined exactly once.
+    """
+    df_work = df_work.copy()
+    df_work["total_weekend_pts"] = df_work.get("points", 0.0) + df_work.get("sprint_points", 0.0)
+
+    historical_median_pos = float(df_work["positionOrder"].median())
+
+    # Driver EWMA
+    driver_ewma = (
+        df_work.groupby("driverId")["positionOrder"]
+        .transform(lambda x: x.shift(1).ewm(alpha=EWMA_ALPHA, min_periods=1).mean())
+        .fillna(historical_median_pos)
+    )
+
+    # Driver regulation reset decay
+    for reset_season in REGULATION_RESET_SEASONS:
+        reset_mask = df_work["season"] == reset_season
+        first_round = df_work.loc[reset_mask, "round"].min() if reset_mask.any() else None
+        if first_round is not None:
+            driver_reset_mask = reset_mask & (df_work["round"] == first_round)
+            driver_ewma.loc[driver_reset_mask] *= driver_reg_reset_decay
+
+    # Constructor EWMA
+    df_team_pts_per_race = (
+        df_work.groupby(["season", "round", "constructorId"])["total_weekend_pts"]
+        .sum()
+        .reset_index()
+        .sort_values(by=["season", "round"])
+    )
+    df_team_pts_per_race["constructor_form_ewma"] = (
+        df_team_pts_per_race.groupby("constructorId")["total_weekend_pts"]
+        .transform(lambda x: x.shift(1).ewm(alpha=EWMA_ALPHA, min_periods=1).mean())
+        .fillna(0.0)
+    )
+
+    df_merged = pd.merge(
+        df_work[["season", "round", "constructorId"]],
+        df_team_pts_per_race[["season", "round", "constructorId", "constructor_form_ewma"]],
+        on=["season", "round", "constructorId"],
+        how="left",
+    )
+    constructor_ewma = df_merged["constructor_form_ewma"].fillna(0.0).copy()
+
+    # Season start decay
+    season_first_rounds = df_work.groupby("season")["round"].transform("min")
+    is_season_start = df_work["round"] == season_first_rounds
+    constructor_ewma.loc[is_season_start] *= off_season_decay
+
+    # Regulation reset decay
+    for reset_season in REGULATION_RESET_SEASONS:
+        reset_mask = is_season_start & (df_work["season"] == reset_season)
+        constructor_ewma.loc[reset_mask] *= regulation_reset_decay
+
+    # Summer break decay
+    is_post_summer = df_work["round"] == summer_break_round
+    constructor_ewma.loc[is_post_summer] *= summer_break_decay
+
+    return driver_ewma, constructor_ewma
